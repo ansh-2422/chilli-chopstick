@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chilli Chopstick — Smart Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Oswald:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #e8192c;
+  --red-dark: #a50d1c;
+  --red-light: #ff4d5e;
+  --yellow: #ffd700;
+  --yellow-light: #ffe566;
+  --yellow-dark: #c9a800;
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: #2a2a2a;
+  --border-red: rgba(232,25,44,.25);
+  --veg: #3dba57;
+  --nonveg: #e8192c;
+  --text: #f5f5f5;
+  --text-muted: #999;
+  --text-dim: #555;
+  --sidebar-w: 340px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5}
+
+/* PARTICLES */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* NAV */
+#navbar{position:sticky;top:0;z-index:100;background:rgba(13,13,13,.96);backdrop-filter:blur(12px);border-bottom:2px solid var(--red);padding:0 1rem;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:.4rem}
+.nav-logo .chilli{color:var(--red)}
+.nav-logo .chopstick{color:var(--yellow)}
+.nav-actions{display:flex;align-items:center;gap:.75rem}
+
+#cart-btn{position:relative;background:linear-gradient(135deg,var(--red-dark),var(--red));border:none;border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s;box-shadow:0 0 15px rgba(232,25,44,.35)}
+#cart-btn:hover{transform:scale(1.1)}
+#cart-count{position:absolute;top:-4px;right:-4px;background:var(--yellow);color:#000;font-size:.65rem;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;transition:transform .2s;display:none}
+#cart-count.show{display:flex}
+#cart-count.pop{animation:countPop .3s ease}
+@keyframes countPop{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+/* HERO */
+#hero{position:relative;z-index:2;padding:2.5rem 1rem 1.5rem;text-align:center;overflow:hidden}
+#hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(232,25,44,.1),transparent);pointer-events:none}
+#hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.hero-brand{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.4rem}
+.hero-chilli{font-family:'Oswald',sans-serif;font-size:clamp(2.2rem,7vw,4.5rem);font-weight:700;color:var(--red);letter-spacing:.02em;line-height:1;animation:heroFade .7s ease both;text-shadow:0 0 30px rgba(232,25,44,.4)}
+.hero-chopstick{font-family:'Oswald',sans-serif;font-size:clamp(2.2rem,7vw,4.5rem);font-weight:700;color:var(--yellow);letter-spacing:.02em;line-height:1;animation:heroFade .7s .1s ease both;text-shadow:0 0 30px rgba(255,215,0,.3)}
+.hero-tagline{font-family:'Nunito',sans-serif;font-size:.82rem;letter-spacing:.25em;color:var(--text-muted);text-transform:uppercase;margin-top:.4rem;animation:heroFade .7s .2s ease both}
+.hero-divider{width:60px;height:3px;background:linear-gradient(90deg,var(--red),var(--yellow));margin:.8rem auto;border-radius:2px;animation:heroFade .7s .3s ease both}
+.hero-delivery-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(232,25,44,.1);border:1px solid var(--border-red);border-radius:20px;padding:.3rem .9rem;font-size:.75rem;font-weight:700;color:var(--red-light);letter-spacing:.05em;animation:heroFade .7s .4s ease both;margin-top:.3rem}
+@keyframes heroFade{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+
+/* SEARCH BAR */
+#search-bar{position:sticky;top:60px;z-index:99;background:rgba(13,13,13,.97);backdrop-filter:blur(12px);padding:.6rem 1rem;border-bottom:1px solid var(--border)}
+.search-wrap{position:relative;max-width:600px;margin:0 auto}
+#search-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:.88rem;padding:.5rem 2.5rem .5rem 2.5rem;border-radius:8px;outline:none;transition:border-color .2s}
+#search-input:focus{border-color:var(--red)}
+.search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:.9rem}
+#search-clear{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;display:none}
+#search-clear.show{display:block}
+
+/* FILTER CHIPS */
+#filter-bar{position:sticky;top:108px;z-index:98;background:rgba(13,13,13,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.filter-scroll{display:flex;gap:.5rem;padding:.5rem 1rem;overflow-x:auto;scrollbar-width:none}
+.filter-scroll::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;padding:.3rem .85rem;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-chip.active{background:rgba(232,25,44,.15);border-color:var(--red);color:var(--red-light)}
+
+/* CATEGORY TABS */
+#cat-tabs{position:sticky;top:150px;z-index:97;background:rgba(13,13,13,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.tabs-scroll{display:flex;gap:0;padding:.4rem .75rem;overflow-x:auto;scrollbar-width:none;position:relative}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tab-pill{flex-shrink:0;background:none;border:none;color:var(--text-muted);font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:500;padding:.4rem .85rem;border-radius:6px;cursor:pointer;transition:all .25s;letter-spacing:.06em;white-space:nowrap}
+.tab-pill.active{color:var(--yellow);background:rgba(255,215,0,.1);border-bottom:2px solid var(--yellow)}
+
+/* MAIN LAYOUT */
+#main{position:relative;z-index:2}
+.layout{display:flex;gap:0}
+#menu-area{flex:1;padding:1rem;min-width:0}
+@media(min-width:1024px){#menu-area{padding:1.5rem}}
+
+/* SECTION */
+.menu-section{margin-bottom:2.5rem}
+.section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.2rem;padding-bottom:.6rem;position:relative}
+.section-header::after{content:'';position:absolute;bottom:0;left:0;width:50px;height:3px;background:linear-gradient(90deg,var(--red),transparent);border-radius:2px}
+.section-icon{font-size:1.4rem}
+.section-title{font-family:'Oswald',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);letter-spacing:.1em;text-transform:uppercase}
+.section-title span{color:var(--red)}
+
+/* MENU GRID */
+.menu-grid{display:grid;grid-template-columns:1fr;gap:.85rem}
+@media(min-width:600px){.menu-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1200px){.menu-grid{grid-template-columns:1fr 1fr 1fr}}
+
+/* ITEM CARD */
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem;transition:all .25s;position:relative;overflow:hidden;opacity:0;transform:translateY(15px)}
+.item-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--red);transition:height .3s;border-radius:0 0 2px 2px}
+.item-card:hover::before{height:100%}
+.item-card.visible{opacity:1;transform:translateY(0);transition:opacity .4s ease,transform .4s ease,box-shadow .25s,border-color .25s}
+.item-card:hover{border-color:rgba(232,25,44,.3);box-shadow:0 4px 20px rgba(232,25,44,.08)}
+.item-card.flash{animation:cardFlash .4s ease}
+@keyframes cardFlash{0%,100%{background:var(--surface)}50%{background:rgba(232,25,44,.1)}}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.4rem}
+.card-info{flex:1;min-width:0}
+.card-name-row{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.type-dot{width:12px;height:12px;border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.type-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.type-dot.veg{border:1.5px solid var(--veg);color:var(--veg)}
+.type-dot.nonveg{border:1.5px solid var(--nonveg);color:var(--nonveg)}
+.item-name{font-family:'Nunito',sans-serif;font-weight:700;font-size:.9rem;color:var(--text);line-height:1.3}
+.item-desc{font-size:.74rem;color:var(--text-muted);font-style:italic;margin-top:.25rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.badges{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.35rem}
+.badge{font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
+.badge-special{background:rgba(255,215,0,.12);color:var(--yellow);border:1px solid rgba(255,215,0,.3)}
+.badge-best{background:rgba(232,25,44,.12);color:var(--red-light);border:1px solid rgba(232,25,44,.3)}
+.badge-family{background:rgba(61,186,87,.1);color:#5dd475;border:1px solid rgba(61,186,87,.3)}
+.badge-new{background:rgba(33,150,243,.1);color:#42a5f5;border:1px solid rgba(33,150,243,.3)}
+.spicy{font-size:.65rem;margin-top:.2rem;letter-spacing:1px}
+
+/* PRICE + QTY SECTION */
+.card-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:.6rem}
+.price-full{font-family:'Oswald',sans-serif;font-size:1.05rem;font-weight:600;color:var(--yellow)}
+.price-half{font-size:.72rem;color:var(--text-muted);margin-top:.1rem}
+
+/* HALF/FULL TOGGLE */
+.size-toggle{display:flex;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:.4rem}
+.size-btn{background:none;border:none;color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.68rem;font-weight:700;padding:.2rem .5rem;cursor:pointer;transition:all .2s}
+.size-btn.active{background:rgba(232,25,44,.2);color:var(--red-light)}
+
+/* QUANTITY STEPPER */
+.stepper{display:flex;align-items:center;gap:.1rem}
+.stepper-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-weight:700;line-height:1}
+.stepper-btn:hover{background:rgba(255,255,255,.08)}
+.stepper-btn.add-btn{background:var(--red);color:#fff;border-color:var(--red)}
+.stepper-btn.add-btn:hover{background:var(--red-light);transform:scale(1.08)}
+.stepper-count{width:26px;text-align:center;font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:600;color:var(--yellow)}
+.item-note-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:.72rem;padding:.3rem .5rem;border-radius:6px;outline:none;margin-top:.4rem;display:none}
+.item-note-input.show{display:block}
+.item-note-input:focus{border-color:rgba(232,25,44,.4)}
+.note-toggle{background:none;border:none;color:var(--text-dim);font-size:.68rem;cursor:pointer;margin-top:.3rem;font-family:'Nunito',sans-serif;text-decoration:underline;display:none}
+.note-toggle.show{display:block}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* DESKTOP CART SIDEBAR */
+#cart-sidebar{position:fixed;right:-360px;top:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;display:flex;flex-direction:column;transition:right .35s cubic-bezier(.4,0,.2,1);overflow:hidden}
+#cart-sidebar.open{right:0;box-shadow:-8px 0 40px rgba(0,0,0,.6)}
+@media(max-width:1023px){#cart-sidebar{width:100%;border-left:none;border-top:2px solid var(--red);top:auto;bottom:-100%;height:85vh;border-radius:16px 16px 0 0;transition:bottom .35s cubic-bezier(.4,0,.2,1)}
+#cart-sidebar.open{bottom:0;right:0}}
+.cart-header{padding:1rem 1rem .75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cart-title{font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:var(--text);letter-spacing:.1em;text-transform:uppercase}
+.cart-title span{color:var(--red)}
+.cart-close{background:none;border:1px solid var(--border);color:var(--text-muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.cart-close:hover{border-color:var(--red);color:var(--red)}
+.cart-body{flex:1;overflow-y:auto;padding:.75rem 1rem;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.cart-empty{text-align:center;padding:3rem 1rem;color:var(--text-muted)}
+.cart-empty-icon{font-size:3rem;margin-bottom:1rem;display:block}
+.cart-empty-text{font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--text-dim);letter-spacing:.05em}
+.cart-item{display:flex;align-items:flex-start;gap:.6rem;padding:.6rem 0;border-bottom:1px solid var(--border);position:relative;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.ci-name{font-size:.82rem;font-weight:700;flex:1;line-height:1.3}
+.ci-note{font-size:.7rem;color:var(--text-muted);font-style:italic;margin-top:.15rem}
+.ci-controls{display:flex;align-items:center;gap:.35rem;margin-top:.3rem}
+.ci-stepper{display:flex;align-items:center;gap:.2rem}
+.ci-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s}
+.ci-btn:hover{background:rgba(232,25,44,.15);border-color:var(--red);color:var(--red)}
+.ci-qty{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--yellow);width:20px;text-align:center}
+.ci-price{font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--yellow);font-weight:600;margin-left:auto;white-space:nowrap}
+.ci-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.85rem;padding:.15rem;transition:color .2s;margin-left:.25rem}
+.ci-del:hover{color:var(--red)}
+.cart-footer{padding:.75rem 1rem;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.price-breakdown{margin-bottom:.75rem}
+.price-row{display:flex;justify-content:space-between;font-size:.78rem;color:var(--text-muted);padding:.2rem 0}
+.price-row.total{color:var(--yellow);font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;border-top:1px solid var(--border);padding-top:.5rem;margin-top:.3rem;letter-spacing:.05em}
+.order-textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:.75rem;padding:.5rem;border-radius:8px;resize:none;outline:none;height:55px;margin-bottom:.6rem}
+.order-textarea:focus{border-color:rgba(232,25,44,.4)}
+.char-count{font-size:.65rem;color:var(--text-dim);text-align:right;margin-top:-.4rem;margin-bottom:.4rem}
+.proceed-btn{width:100%;background:linear-gradient(135deg,var(--red-dark),var(--red),var(--red-light));border:none;color:#fff;font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:700;padding:.75rem;border-radius:8px;cursor:pointer;letter-spacing:.12em;text-transform:uppercase;position:relative;overflow:hidden;transition:transform .15s;box-shadow:0 4px 15px rgba(232,25,44,.3)}
+.proceed-btn:hover{transform:scale(1.01);box-shadow:0 6px 20px rgba(232,25,44,.45)}
+.proceed-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:translateX(-100%)}
+.proceed-btn:hover::after{animation:shimmerBtn .6s ease}
+@keyframes shimmerBtn{to{transform:translateX(100%)}}
+.clear-btn{width:100%;background:none;border:1px solid rgba(255,255,255,.1);color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.75rem;padding:.4rem;border-radius:8px;cursor:pointer;margin-top:.4rem;transition:all .2s}
+.clear-btn:hover{background:rgba(232,25,44,.08);border-color:var(--red);color:var(--red-light)}
+
+/* OVERLAY */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:150;display:none;backdrop-filter:blur(4px)}
+#overlay.show{display:block}
+
+/* ORDER FORM MODAL */
+#order-modal{position:fixed;inset:0;z-index:300;display:none;align-items:flex-end;justify-content:center}
+#order-modal.show{display:flex}
+@media(min-width:600px){#order-modal{align-items:center}}
+.form-sheet{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:1.5rem;animation:slideUp .35s ease}
+@media(min-width:600px){.form-sheet{border-radius:12px;border-top:3px solid var(--red)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.form-title{font-family:'Oswald',sans-serif;font-size:1.15rem;color:var(--text);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.2rem;text-align:center}
+.form-title span{color:var(--red)}
+.form-field{margin-bottom:.9rem}
+.form-label{display:block;font-size:.72rem;font-weight:700;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:.88rem;padding:.55rem .75rem;border-radius:8px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--red)}
+.form-input.error{border-color:var(--red);animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.form-error{color:var(--red-light);font-size:.7rem;margin-top:.2rem;display:none}
+.form-error.show{display:block}
+.submit-btn{width:100%;background:linear-gradient(135deg,var(--red-dark),var(--red));border:none;color:#fff;font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;padding:.8rem;border-radius:8px;cursor:pointer;letter-spacing:.12em;text-transform:uppercase;margin-top:.5rem;box-shadow:0 4px 15px rgba(232,25,44,.3)}
+.submit-btn:hover{background:linear-gradient(135deg,var(--red),var(--red-light))}
+
+/* SUCCESS SCREEN */
+#success-screen{position:fixed;inset:0;z-index:400;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:2rem}
+#success-screen.show{display:flex}
+.success-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--red-dark),var(--red));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1.5rem;animation:popIn .5s .2s both;box-shadow:0 0 40px rgba(232,25,44,.5)}
+@keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.success-title{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:700;color:var(--yellow);margin-bottom:.5rem;letter-spacing:.1em;animation:heroFade .5s .4s both}
+.success-sub{color:var(--text-muted);font-size:.85rem;animation:heroFade .5s .5s both}
+#confetti-canvas{position:absolute;inset:0;pointer-events:none}
+
+/* SNACKBAR */
+#snackbar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--red);color:var(--text);font-size:.8rem;padding:.5rem 1.2rem;border-radius:6px;z-index:500;transition:transform .3s;white-space:nowrap;backdrop-filter:blur(8px)}
+#snackbar.show{transform:translateX(-50%) translateY(0)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:4rem 1rem;color:var(--text-muted)}
+.empty-state-icon{font-size:3rem;margin-bottom:1rem;display:block}
+.empty-state-text{font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--text-dim);letter-spacing:.05em}
+
+/* SCROLL TO TOP */
+#scroll-top{position:fixed;bottom:80px;right:1rem;width:38px;height:38px;border-radius:6px;background:rgba(232,25,44,.15);border:1px solid var(--red);color:var(--red);font-size:.9rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:90;transition:all .2s}
+#scroll-top.show{display:flex}
+#scroll-top:hover{background:rgba(232,25,44,.3)}
+
+/* BOTTOM FAB (mobile only) */
+#mobile-cart-fab{position:fixed;bottom:1.2rem;right:1.2rem;z-index:90;display:none}
+@media(max-width:1023px){#mobile-cart-fab{display:block}}
+.fab{background:linear-gradient(135deg,var(--red-dark),var(--red));border:none;border-radius:8px;color:#fff;font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;padding:.7rem 1.1rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;box-shadow:0 4px 20px rgba(232,25,44,.45);transition:transform .2s;letter-spacing:.08em;text-transform:uppercase}
+.fab:hover{transform:scale(1.05)}
+.fab-count{background:var(--yellow);color:#000;border-radius:6px;font-size:.65rem;padding:.1rem .35rem;font-weight:800}
+
+/* No results */
+.no-results{text-align:center;padding:3rem 1rem}
+.no-results-emoji{font-size:2.5rem;display:block;margin-bottom:.75rem}
+.no-results-text{color:var(--text-muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-logo">🥢 Chilli Chopstick</div>
+  <div class="nav-actions">
+    <button id="cart-btn" onclick="toggleCart()">🛒<span id="cart-count">0</span></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-name">Chilli Chopstick</div>
+  <div class="hero-tagline">Momos • Noodles • Starters</div>
+  <div class="hero-divider"></div>
+</div>
+
+<!-- SEARCH -->
+<div id="search-bar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="text" placeholder="Search dishes..." oninput="handleSearch(this.value)">
+    <button id="search-clear" onclick="clearSearch()">✕</button>
+  </div>
+</div>
+
+<!-- FILTER CHIPS -->
+<div id="filter-bar">
+  <div class="filter-scroll">
+    <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-chip" onclick="setFilter('veg',this)">🌿 Veg Only</button>
+    <button class="filter-chip" onclick="setFilter('nonveg',this)">🍗 Non-Veg</button>
+    <button class="filter-chip" onclick="setFilter('special',this)">⭐ Bestseller</button>
+    <button class="filter-chip" onclick="setFilter('combo',this)">🍱 Combos</button>
+    <select id="sort-select" onchange="handleSort(this.value)" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:'Raleway',sans-serif;font-size:.73rem;padding:.25rem .5rem;border-radius:20px;outline:none;cursor:pointer;margin-left:.25rem">
+      <option value="default">Sort: Default</option>
+      <option value="low">Price: Low→High</option>
+      <option value="high">Price: High→Low</option>
+    </select>
+  </div>
+</div>
+
+<!-- CATEGORY TABS -->
+<div id="cat-tabs">
+  <div class="tabs-scroll" id="tabs-container"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="layout">
+    <div id="menu-area"></div>
+  </div>
+</div>
+
+<!-- SCROLL TO TOP -->
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲</button>
+
+<!-- MOBILE FAB -->
+<div id="mobile-cart-fab">
+  <button class="fab" onclick="toggleCart()">
+    🛒 Cart <span class="fab-count" id="fab-count">0</span>
+  </button>
+</div>
+
+<!-- CART SIDEBAR -->
+<div id="cart-sidebar">
+  <div class="cart-header">
+    <div class="cart-title">🛒 Your Order</div>
+    <button class="cart-close" onclick="toggleCart()">✕</button>
+  </div>
+  <div class="cart-body" id="cart-body"></div>
+  <div class="cart-footer" id="cart-footer" style="display:none">
+    <textarea class="order-textarea" id="order-note" placeholder="Special request for kitchen... (e.g. extra spicy, less oil)" maxlength="150" oninput="updateCharCount(this)"></textarea>
+    <div class="char-count"><span id="char-count">0</span>/150</div>
+    <div class="price-breakdown" id="price-breakdown"></div>
+    <button class="proceed-btn" onclick="openOrderForm()">PLACE ORDER VIA WHATSAPP →</button>
+    <button class="clear-btn" onclick="confirmClearCart()">Clear Cart</button>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeAll()"></div>
+
+
+
+<!-- ORDER FORM MODAL -->
+<div id="order-modal">
+  <div style="position:fixed;inset:0;z-index:299" onclick="closeOrderModal()"></div>
+  <div class="form-sheet" style="position:relative;z-index:301">
+    <div class="form-title">📋 Order Details</div>
+    <div class="form-field">
+      <label class="form-label">Your Name</label>
+      <input class="form-input" id="f-name" type="text" placeholder="Enter your name">
+      <div class="form-error" id="err-name">Please enter your name</div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Phone Number</label>
+      <input class="form-input" id="f-phone" type="tel" placeholder="10-digit mobile number" maxlength="10">
+      <div class="form-error" id="err-phone">Please enter a valid 10-digit number</div>
+    </div>
+
+    <button class="submit-btn" onclick="submitOrder()">📲 SEND ORDER ON WHATSAPP</button>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-screen">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="success-check">✓</div>
+  <div class="success-title">Order Sent!</div>
+  <div class="success-sub" style="margin-bottom:2rem">Redirecting you to WhatsApp...</div>
+  <button onclick="resetSuccess()" style="background:rgba(201,168,76,.15);border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',sans-serif;font-size:.8rem;padding:.6rem 1.5rem;border-radius:24px;cursor:pointer">Back to Menu</button>
+</div>
+
+<!-- SNACKBAR -->
+<div id="snackbar"></div>
+
+<script>
+const CONFIG = {
+  restaurantName: "Chilli Chopstick",
+  whatsappNumber: "918750008008",
+  gstPercent: 5,
+  packingCharge: 20,
+  currency: "₹",
+  tableCount: 20,
+  tableCapacities: {
+    small:[1,2,3,4],
+    medium:[5,6,7,8,9,10],
+    large:[11,12,13,14],
+    vip:[15,16,17,18,19,20]
+  },
+  enableSearch:true,
+  enableFilters:true,
+  enableSpecialInstructions:true,
+  accentColor:"#c9a84c",
+  vegAccent:"#4caf50",
+  nonVegAccent:"#e53935"
+};
+
+// ======================== MENU DATA ========================
+const MENU = [
+  // MOMOS - VEG
+  {id:'m1',cat:'Momos',sub:'Veg Momos',name:'Veg Steam',type:'veg',full:99,half:59,desc:'Soft steamed dumplings filled with fresh vegetables & aromatic spices',badges:['Bestseller'],spicy:1},
+  {id:'m2',cat:'Momos',sub:'Veg Momos',name:'Veg Fried',type:'veg',full:109,half:69,desc:'Crispy golden-fried momos with a crunchy exterior & juicy veg filling',badges:['Bestseller'],spicy:1},
+  {id:'m3',cat:'Momos',sub:'Veg Momos',name:'Kurkure Veg',type:'veg',full:129,half:89,desc:'Extra crunchy momos coated in a crispy batter — addictively good!',badges:['Bestseller'],spicy:2},
+  {id:'m4',cat:'Momos',sub:'Veg Momos',name:'Cocktail Momo Veg',type:'veg',full:149,half:99,desc:'Bite-sized cocktail momos, perfect for sharing & snacking',badges:[],spicy:1},
+  // MOMOS - PANEER
+  {id:'m5',cat:'Momos',sub:'Paneer Momos',name:'Paneer Steam',type:'veg',full:119,half:69,desc:'Melt-in-mouth steamed momos stuffed with soft cottage cheese & herbs',badges:[],spicy:1},
+  {id:'m6',cat:'Momos',sub:'Paneer Momos',name:'Paneer Fried',type:'veg',full:129,half:79,desc:'Fried momos with a rich, creamy paneer filling inside',badges:[],spicy:1},
+  {id:'m7',cat:'Momos',sub:'Paneer Momos',name:'Kurkure Paneer',type:'veg',full:149,half:89,desc:'Ultra-crispy coated paneer momos with a fiery red chutney dip',badges:['Bestseller'],spicy:2},
+  {id:'m8',cat:'Momos',sub:'Paneer Momos',name:'Cocktail Paneer Momo',type:'veg',full:159,half:109,desc:'Platter of bite-sized fried paneer momos — a crowd favourite',badges:[],spicy:1},
+  // MOMOS - CHICKEN
+  {id:'m9',cat:'Momos',sub:'Chicken Momos',name:'Chicken Steam',type:'nonveg',full:139,half:79,desc:'Classic steamed chicken momos with minced chicken & ginger filling',badges:['Bestseller'],spicy:1},
+  {id:'m10',cat:'Momos',sub:'Chicken Momos',name:'Chicken Fried',type:'nonveg',full:149,half:89,desc:'Deep-fried golden chicken momos with crispy shell & juicy center',badges:['Bestseller'],spicy:1},
+  {id:'m11',cat:'Momos',sub:'Chicken Momos',name:'Kurkure Chicken',type:'nonveg',full:159,half:99,desc:'Signature crunchy-coated chicken momos with a bold smoky flavour',badges:['Chef Special'],spicy:2},
+  {id:'m12',cat:'Momos',sub:'Chicken Momos',name:'Cocktail Momo Chicken',type:'nonveg',full:169,half:119,desc:'Mini cocktail chicken momos — perfect party snack',badges:[],spicy:2},
+  // SPRING ROLLS
+  {id:'sr1',cat:'Spring Rolls',sub:'',name:'Veg Spring Roll',type:'veg',full:99,half:59,desc:'Crispy golden rolls packed with stir-fried vegetables & noodles',badges:['Bestseller'],spicy:1},
+  {id:'sr2',cat:'Spring Rolls',sub:'',name:'Kurkure Spring Roll',type:'veg',full:119,half:69,desc:'Extra-crunchy variant of our classic spring rolls with a spicy kick',badges:[],spicy:2},
+  {id:'sr3',cat:'Spring Rolls',sub:'',name:'Chicken Spring Roll',type:'nonveg',full:129,half:79,desc:'Flaky crispy rolls stuffed with seasoned minced chicken & veggies',badges:[],spicy:1},
+  {id:'sr4',cat:'Spring Rolls',sub:'',name:'Kurkure Chicken Roll',type:'nonveg',full:149,half:89,desc:'Chef-recommended ultra-crispy chicken rolls with a crackle coating',badges:['Chef Special'],spicy:2},
+  // CHOWMEIN
+  {id:'cw1',cat:'Chowmein',sub:'',name:'Desi Chowmein',type:'veg',full:120,half:null,desc:'Our signature desi-style chowmein tossed in tangy masala sauce',badges:['Bestseller'],spicy:2},
+  {id:'cw2',cat:'Chowmein',sub:'',name:'Veg Chowmein',type:'veg',full:149,half:79,desc:'Classic stir-fried wheat noodles with fresh vegetables & soy sauce',badges:[],spicy:1},
+  {id:'cw3',cat:'Chowmein',sub:'',name:'Egg Chowmein',type:'nonveg',full:169,half:99,desc:'Wok-tossed chowmein with scrambled egg & crunchy vegetables',badges:[],spicy:1},
+  {id:'cw4',cat:'Chowmein',sub:'',name:'Paneer Chowmein',type:'veg',full:179,half:109,desc:'Rich chowmein loaded with golden paneer cubes in a spicy sauce',badges:[],spicy:2},
+  {id:'cw5',cat:'Chowmein',sub:'',name:'Chicken Chowmein',type:'nonveg',full:189,half:119,desc:'Hearty chicken chowmein with tender shredded chicken & bold flavours',badges:['Bestseller'],spicy:2},
+  // GARLIC NOODLES
+  {id:'gn1',cat:'Garlic Noodles',sub:'',name:'Veg Garlic Noodles',type:'veg',full:169,half:99,desc:'Wok-tossed noodles infused with roasted garlic & chilli oil',badges:[],spicy:2},
+  {id:'gn2',cat:'Garlic Noodles',sub:'',name:'Egg Garlic Noodles',type:'nonveg',full:189,half:119,desc:'Garlicky noodles with fluffy scrambled eggs & spring onion',badges:[],spicy:2},
+  {id:'gn3',cat:'Garlic Noodles',sub:'',name:'Paneer Garlic Noodles',type:'veg',full:199,half:129,desc:'Creamy paneer & bold roasted garlic noodles — a house favourite',badges:['Chef Special'],spicy:2},
+  {id:'gn4',cat:'Garlic Noodles',sub:'',name:'Chicken Garlic Noodles',type:'nonveg',full:219,half:139,desc:'Smoky wok-charred noodles with juicy chicken & garlic butter glaze',badges:['Chef Special'],spicy:2},
+  // HAKKA NOODLES
+  {id:'hn1',cat:'Hakka Noodles',sub:'',name:'Veg Hakka Noodles',type:'veg',full:149,half:89,desc:'Classic Indo-Chinese hakka noodles with colourful vegetables',badges:['Bestseller'],spicy:1},
+  {id:'hn2',cat:'Hakka Noodles',sub:'',name:'Egg Hakka Noodles',type:'nonveg',full:189,half:99,desc:'Hakka noodles tossed with egg, capsicum & soy-chilli sauce',badges:[],spicy:1},
+  {id:'hn3',cat:'Hakka Noodles',sub:'',name:'Paneer Hakka Noodles',type:'veg',full:189,half:119,desc:'Hakka noodles with golden fried paneer & fragrant sauces',badges:[],spicy:1},
+  {id:'hn4',cat:'Hakka Noodles',sub:'',name:'Chicken Hakka Noodles',type:'nonveg',full:199,half:129,desc:'Traditional hakka noodles with tender chicken strips & bold flavour',badges:['Bestseller'],spicy:1},
+  // FRIED RICE
+  {id:'fr1',cat:'Fried Rice',sub:'',name:'Veg Fried Rice',type:'veg',full:149,half:79,desc:'Wok-fried basmati rice with garden vegetables & aromatic sauces',badges:['Bestseller'],spicy:1},
+  {id:'fr2',cat:'Fried Rice',sub:'',name:'Egg Fried Rice',type:'nonveg',full:169,half:99,desc:'Classic egg fried rice with scrambled egg & spring onion',badges:['Bestseller'],spicy:1},
+  {id:'fr3',cat:'Fried Rice',sub:'',name:'Paneer Fried Rice',type:'veg',full:179,half:109,desc:'Fragrant fried rice packed with crispy golden paneer cubes',badges:[],spicy:1},
+  {id:'fr4',cat:'Fried Rice',sub:'',name:'Chicken Fried Rice',type:'nonveg',full:189,half:119,desc:'Restaurant-style chicken fried rice with juicy tender chicken',badges:['Chef Special','Bestseller'],spicy:1},
+  // STARTERS
+  {id:'st1',cat:'Starters',sub:'',name:'Veg Manchurian',type:'veg',full:169,half:89,desc:'Soft veg balls tossed in spicy Manchurian sauce — a classic starter',badges:['Bestseller'],spicy:2},
+  {id:'st2',cat:'Starters',sub:'',name:'Chilli Manchurian',type:'veg',full:175,half:99,desc:'Crispy veggie bites in a fiery chilli-garlic Manchurian gravy',badges:[],spicy:3},
+  {id:'st3',cat:'Starters',sub:'',name:'Chilli Gobhi',type:'veg',full:179,half:109,desc:'Crispy cauliflower florets tossed in bold Indo-Chinese chilli sauce',badges:[],spicy:3},
+  {id:'st4',cat:'Starters',sub:'',name:'Chilli Paneer',type:'veg',full:219,half:129,desc:'Restaurant-style chilli paneer — golden paneer in a tangy sauce',badges:['Chef Special'],spicy:2},
+  {id:'st5',cat:'Starters',sub:'',name:'Chilli Chicken',type:'nonveg',full:249,half:149,desc:'Signature Indo-Chinese chilli chicken with crispy coating & bold sauce',badges:['Chef Special','Bestseller'],spicy:3},
+  // SIDES
+  {id:'sd1',cat:'Sides',sub:'',name:'Fries',type:'veg',full:99,half:59,desc:'Classic golden french fries — crispy outside, fluffy inside',badges:['Bestseller'],spicy:0},
+  {id:'sd2',cat:'Sides',sub:'',name:'Piri Piri Fries',type:'veg',full:149,half:79,desc:'Crispy fries dusted with our house piri-piri spice blend',badges:[],spicy:2},
+  {id:'sd3',cat:'Sides',sub:'',name:'Cheesy Fries',type:'veg',full:169,half:89,desc:'Hot fries smothered in rich molten cheese sauce',badges:['Bestseller'],spicy:0},
+  {id:'sd4',cat:'Sides',sub:'',name:'Chilli Potato',type:'veg',full:179,half:99,desc:'Crispy baby potatoes tossed in fiery chilli soy sauce',badges:[],spicy:3},
+  {id:'sd5',cat:'Sides',sub:'',name:'Honey Chilli Potato',type:'veg',full:199,half:119,desc:'Crunchy potatoes glazed in sweet honey & chilli — perfectly balanced',badges:['Chef Special'],spicy:2},
+  // SHAKES & COFFEE
+  {id:'bv1',cat:'Shakes & Coffee',sub:'',name:'Cold Coffee',type:'veg',full:99,half:null,desc:'Chilled creamy coffee blended with ice cream & milk',badges:['Bestseller'],spicy:0},
+  {id:'bv2',cat:'Shakes & Coffee',sub:'',name:'Mango Shake',type:'veg',full:119,half:null,desc:'Fresh mango pulp blended into a thick creamy shake',badges:[],spicy:0},
+  {id:'bv3',cat:'Shakes & Coffee',sub:'',name:'Strawberry Shake',type:'veg',full:119,half:null,desc:'Smooth strawberry shake made with real fruit and fresh cream',badges:[],spicy:0},
+  {id:'bv4',cat:'Shakes & Coffee',sub:'',name:'Chocolate Shake',type:'veg',full:119,half:null,desc:'Rich indulgent chocolate milkshake with cocoa and ice cream',badges:[],spicy:0},
+  {id:'bv5',cat:'Shakes & Coffee',sub:'',name:'Oreo Shake',type:'veg',full:129,half:null,desc:'Crushed Oreo cookies blended into a thick velvety shake',badges:[],spicy:0},
+  {id:'bv6',cat:'Shakes & Coffee',sub:'',name:'KitKat Shake',type:'veg',full:149,half:null,desc:'KitKat chocolate wafer blended into a luscious thick shake',badges:[],spicy:0},
+  // VEG COMBOS
+  {id:'vc1',cat:'Combos',sub:'Veg Combos',name:'Student Combo',type:'veg',full:99,half:null,desc:'Veg Manchurian + Veg Fried Rice — great value meal for one',badges:['Bestseller'],spicy:1},
+  {id:'vc2',cat:'Combos',sub:'Veg Combos',name:'Veg Lover Combo',type:'veg',full:249,half:null,desc:'Veg Hakka Noodles + Veg Manchurian (Half) + Veg Momos (Half)',badges:['Bestseller'],spicy:1},
+  {id:'vc3',cat:'Combos',sub:'Veg Combos',name:'Veg Family Combo (4 Pax)',type:'veg',full:599,half:null,desc:'2 Veg Hakka Noodles + 1 Veg Fried Rice + 1 Veg Manchurian + 1 Veg Momos',badges:['Family','Chef Special'],spicy:1},
+  // CHICKEN COMBOS
+  {id:'cc1',cat:'Combos',sub:'Chicken Combos',name:'Non-Veg Lover Combo',type:'nonveg',full:349,half:null,desc:'Chicken Hakka Noodles + Chilli Chicken (Half) + 4 Chicken Momos',badges:['Bestseller'],spicy:2},
+  {id:'cc2',cat:'Combos',sub:'Chicken Combos',name:'Non-Veg Family Combo (4 Pax)',type:'nonveg',full:799,half:null,desc:'2 Chicken Hakka Noodles + 1 Chicken Fried Rice + 1 Chilli Chicken + 1 Chicken Momos',badges:['Family','Chef Special'],spicy:2},
+];
+
+const CATEGORIES = [...new Set(MENU.map(i=>i.cat))];
+const CATEGORY_ICONS = {
+  'Momos':'🥟','Spring Rolls':'🌯','Chowmein':'🍜','Garlic Noodles':'🧄','Hakka Noodles':'🍝','Fried Rice':'🍚','Starters':'🍢','Sides':'🍟','Shakes & Coffee':'🥤','Combos':'🍱'
+};
+
+// STATE
+let cart = JSON.parse(localStorage.getItem('cc_cart')||'[]');
+let isTakeaway = true;
+
+let activeFilter = 'all';
+let sortMode = 'default';
+let searchQuery = '';
+let cartOpen = false;
+
+// ======================== PARTICLES ========================
+(function(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  function makeParticle(){return{x:Math.random()*W,y:H+10,r:Math.random()*2+.5,s:Math.random()*.6+.2,o:Math.random()*.4+.1,d:Math.random()*1.5-.75}}
+  for(let i=0;i<50;i++){const p=makeParticle();p.y=Math.random()*H;pts.push(p)}
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.y-=p.s;p.x+=Math.sin(p.y*.02)*p.d;p.o+=Math.sin(Date.now()*.001+p.x)*.003;
+      if(p.y<-10){Object.assign(p,makeParticle())}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(201,168,76,${Math.max(0,Math.min(.5,p.o))})`;ctx.fill();
+    });
+    requestAnimationFrame(frame);
+  }frame();
+})();
+
+// ======================== BUILD UI ========================
+function buildTabs(){
+  const c=document.getElementById('tabs-container');c.innerHTML='';
+  const tabs=['All',...CATEGORIES];
+  tabs.forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.className='tab-pill'+(i===0?' active':'');
+    b.textContent=(CATEGORY_ICONS[t]||'')+' '+t;
+    b.onclick=()=>scrollToSection(t,b);
+    c.appendChild(b);
+  });
+}
+
+function buildMenu(){
+  const area=document.getElementById('menu-area');area.innerHTML='';
+  // Skeleton shimmer first
+  const sk=document.createElement('div');
+  sk.style.cssText='display:grid;gap:.85rem';
+  for(let i=0;i<6;i++){
+    const d=document.createElement('div');
+    d.className='skeleton';d.style.cssText='height:120px;border-radius:12px';
+    sk.appendChild(d);
+  }area.appendChild(sk);
+  setTimeout(()=>{
+    area.innerHTML='';
+    CATEGORIES.forEach(cat=>{
+      const sec=document.createElement('div');
+      sec.className='menu-section';sec.id='sec-'+cat.replace(/\s/g,'-');
+      sec.innerHTML=`<div class="section-header"><span class="section-icon">${CATEGORY_ICONS[cat]||'🍽'}</span><span class="section-title">${cat}</span></div><div class="menu-grid" id="grid-${cat.replace(/\s/g,'-')}"></div>`;
+      area.appendChild(sec);
+      const items=MENU.filter(i=>i.cat===cat);
+      const grid=sec.querySelector('.menu-grid');
+      items.forEach(item=>{
+        grid.appendChild(buildCard(item));
+      });
+    });
+    setupScrollSpy();
+    setupIntersectionObserver();
+    applyFilters();
+  },600);
+}
+
+function buildCard(item){
+  const el=document.createElement('div');
+  el.className='item-card';el.id='card-'+item.id;
+  const cartItem=cart.find(c=>c.id===item.id);
+  const qty=cartItem?cartItem.qty:0;
+  const sizeInCart=cartItem?cartItem.size:'full';
+  const hasSizes=item.half!==null;
+  const price=sizeInCart==='half'&&item.half?item.half:item.full;
+
+  let badgesHTML='';
+  if(item.badges&&item.badges.length){
+    item.badges.forEach(b=>{
+      if(b==='Bestseller')badgesHTML+=`<span class="badge badge-best">⭐ ${b}</span>`;
+      else if(b==='Chef Special')badgesHTML+=`<span class="badge badge-special">👨‍🍳 ${b}</span>`;
+      else if(b==='Family')badgesHTML+=`<span class="badge badge-family">👨‍👩‍👧 ${b}</span>`;
+      else badgesHTML+=`<span class="badge badge-new">🆕 ${b}</span>`;
+    });
+  }
+  let spicyHTML='';
+  if(item.spicy>0)spicyHTML=`<div class="spicy">${'🌶'.repeat(item.spicy)}</div>`;
+
+  let sizeToggleHTML='';
+  if(hasSizes){
+    const s=sizeInCart||'full';
+    sizeToggleHTML=`<div class="size-toggle">
+      <button class="size-btn ${s==='full'?'active':''}" onclick="setSize('${item.id}','full')">Full ₹${item.full}</button>
+      <button class="size-btn ${s==='half'?'active':''}" onclick="setSize('${item.id}','half')">Half ₹${item.half}</button>
+    </div>`;
+  }
+
+  const showPrice=hasSizes?(sizeInCart==='half'?item.half:item.full):item.full;
+
+  el.innerHTML=`
+    <div class="card-top">
+      <div class="card-info">
+        <div class="card-name-row">
+          <div class="type-dot ${item.type}"></div>
+          <div class="item-name">${item.name}</div>
+        </div>
+        <div class="item-desc">${item.desc}</div>
+        ${badgesHTML?`<div class="badges">${badgesHTML}</div>`:''}
+        ${spicyHTML}
+      </div>
+    </div>
+    ${sizeToggleHTML}
+    <div class="card-bottom">
+      <div class="price-wrap">
+        <div class="price-full">${CONFIG.currency}${showPrice}</div>
+        ${hasSizes&&!sizeToggleHTML?`<div class="price-half">Half: ${CONFIG.currency}${item.half}</div>`:''}
+      </div>
+      <div>
+        ${qty===0?
+          `<div class="stepper"><button class="stepper-btn add-btn" onclick="addToCart('${item.id}')">+</button></div>`:
+          `<div class="stepper">
+            <button class="stepper-btn" onclick="decrementCart('${item.id}')">−</button>
+            <span class="stepper-count">${qty}</span>
+            <button class="stepper-btn add-btn" onclick="incrementCart('${item.id}')">+</button>
+          </div>`
+        }
+      </div>
+    </div>
+    <button class="note-toggle ${qty>0?'show':''}" id="note-toggle-${item.id}" onclick="toggleNote('${item.id}')">📝 Add note</button>
+    <input class="item-note-input" id="note-${item.id}" placeholder="e.g. less spicy, extra sauce" maxlength="80" oninput="updateItemNote('${item.id}',this.value)">
+  `;
+  return el;
+}
+
+// ======================== CART ========================
+function addToCart(id){
+  const item=MENU.find(i=>i.id===id);
+  const existing=cart.find(c=>c.id===id);
+  if(existing){existing.qty++;} 
+  else{
+    const size='full';
+    cart.push({id,name:item.name,type:item.type,qty:1,size,price:item.full,note:''});
+  }
+  saveCart();refreshCard(id);renderCart();animateCartAdd();
+}
+function incrementCart(id){const c=cart.find(i=>i.id===id);if(c){c.qty++;saveCart();refreshCard(id);renderCart();animateCartAdd();}}
+function decrementCart(id){
+  const c=cart.find(i=>i.id===id);
+  if(!c)return;
+  c.qty--;
+  if(c.qty<=0)cart=cart.filter(i=>i.id!==id);
+  saveCart();refreshCard(id);renderCart();
+}
+function setSize(id,size){
+  const item=MENU.find(i=>i.id===id);
+  const c=cart.find(i=>i.id===id);
+  const price=size==='half'?item.half:item.full;
+  if(c){c.size=size;c.price=price;}
+  // Update toggle UI
+  const card=document.getElementById('card-'+id);
+  if(card){
+    card.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+    const btn=card.querySelector(`.size-btn:${size==='full'?'first-child':'last-child'}`);
+    if(btn)btn.classList.add('active');
+    const pf=card.querySelector('.price-full');
+    if(pf)pf.textContent=CONFIG.currency+price;
+  }
+  saveCart();renderCart();
+}
+function updateItemNote(id,val){
+  const c=cart.find(i=>i.id===id);
+  if(c)c.note=val;
+  saveCart();
+}
+function toggleNote(id){
+  const inp=document.getElementById('note-'+id);
+  if(inp)inp.classList.toggle('show');
+}
+function saveCart(){localStorage.setItem('cc_cart',JSON.stringify(cart));}
+
+function refreshCard(id){
+  const existing=document.getElementById('card-'+id);
+  if(!existing)return;
+  const item=MENU.find(i=>i.id===id);
+  if(!item)return;
+  const newCard=buildCard(item);
+  existing.parentNode.replaceChild(newCard,existing);
+  // re-observe
+  const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.1});
+  newCard.classList.add('visible');
+}
+
+function renderCart(){
+  const body=document.getElementById('cart-body');
+  const footer=document.getElementById('cart-footer');
+  const count=cart.reduce((a,c)=>a+c.qty,0);
+  // Update badges
+  document.getElementById('cart-count').textContent=count;
+  document.getElementById('cart-count').classList.toggle('show',count>0);
+  document.getElementById('fab-count').textContent=count;
+  if(count===0){
+    body.innerHTML=`<div class="cart-empty"><span class="cart-empty-icon">🛒</span><div class="cart-empty-text">Your cart is empty</div><div style="font-size:.75rem;color:var(--text-dim);margin-top:.5rem">Add items from the menu</div></div>`;
+    footer.style.display='none';return;
+  }
+  footer.style.display='block';
+  body.innerHTML='';
+  cart.forEach(c=>{
+    const item=MENU.find(i=>i.id===c.id);
+    if(!item)return;
+    const row=document.createElement('div');row.className='cart-item';
+    row.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div class="ci-name">${c.name}${c.size==='half'?' (Half)':item.half?' (Full)':''}</div>
+        ${c.note?`<div class="ci-note">📝 ${c.note}</div>`:''}
+        <div class="ci-controls">
+          <div class="ci-stepper">
+            <button class="ci-btn" onclick="decrementCart('${c.id}')">−</button>
+            <span class="ci-qty">${c.qty}</span>
+            <button class="ci-btn" onclick="incrementCart('${c.id}')">+</button>
+          </div>
+          <button class="ci-del" onclick="removeFromCart('${c.id}')">🗑</button>
+          <span class="ci-price">${CONFIG.currency}${(c.price*c.qty)}</span>
+        </div>
+      </div>`;
+    body.appendChild(row);
+  });
+  // Price breakdown
+  const sub=cart.reduce((a,c)=>a+c.price*c.qty,0);
+  const total=sub;
+  document.getElementById('price-breakdown').innerHTML=`
+    <div class="price-row total"><span>Total</span><span>${CONFIG.currency}${total}</span></div>`;
+}
+
+function removeFromCart(id){
+  cart=cart.filter(i=>i.id!==id);
+  saveCart();refreshCard(id);renderCart();showSnackbar('Item removed from cart');
+}
+
+function animateCartAdd(){
+  const btn=document.getElementById('cart-btn');
+  btn.style.transform='scale(1.2)';
+  setTimeout(()=>btn.style.transform='',200);
+  const count=document.getElementById('cart-count');
+  count.classList.remove('pop');
+  void count.offsetWidth;count.classList.add('pop');
+}
+
+function confirmClearCart(){
+  if(confirm('Clear all items from cart?')){
+    cart=[];saveCart();renderCart();
+    MENU.forEach(item=>{
+      const card=document.getElementById('card-'+item.id);
+      if(card){const n=buildCard(item);card.parentNode.replaceChild(n,card);n.classList.add('visible');}
+    });
+  }
+}
+
+// ======================== TOGGLE CART ========================
+function toggleCart(){
+  cartOpen=!cartOpen;
+  document.getElementById('cart-sidebar').classList.toggle('open',cartOpen);
+  document.getElementById('overlay').classList.toggle('show',cartOpen);
+}
+function closeAll(){
+  cartOpen=false;
+  document.getElementById('cart-sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function openOrderForm(){
+  if(cart.length===0){showSnackbar('Cart is empty!');return;}
+  document.getElementById('order-modal').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeOrderModal(){
+  document.getElementById('order-modal').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ======================== ORDER SUBMIT ========================
+function submitOrder(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  let valid=true;
+  ['err-name','err-phone'].forEach(e=>document.getElementById(e).classList.remove('show'));
+  ['f-name','f-phone'].forEach(e=>document.getElementById(e).classList.remove('error'));
+  if(!name){document.getElementById('f-name').classList.add('error');document.getElementById('err-name').classList.add('show');valid=false;}
+  if(!/^\d{10}$/.test(phone)){document.getElementById('f-phone').classList.add('error');document.getElementById('err-phone').classList.add('show');valid=false;}
+  if(!valid)return;
+
+  const sub=cart.reduce((a,c)=>a+c.price*c.qty,0);
+  const total=sub;
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const specialNote=document.getElementById('order-note').value.trim()||'None';
+
+  let itemLines='';
+  cart.forEach((c,i)=>{
+    const item=MENU.find(it=>it.id===c.id);
+    itemLines+=`${i+1}. ${c.name}${c.size==='half'?' (Half)':item&&item.half?' (Full)':''} × ${c.qty} — ${CONFIG.currency}${c.price*c.qty}`;
+    if(c.note)itemLines+=`\n   📝 Note: ${c.note}`;
+    itemLines+='\n';
+  });
+
+  const msg=`🍽️ *NEW ORDER — ${CONFIG.restaurantName}*
+━━━━━━━━━━━━━━━━━━━━
+📋 *Order Details:*
+
+${itemLines}
+━━━━━━━━━━━━━━━━━━━━
+💰 *Price Breakdown:*
+Total:        ${CONFIG.currency}${total}
+━━━━━━━━━━━━━━━━━━━━
+🛵 Takeaway Order
+👤 Name: ${name}
+📞 Phone: ${phone}
+⏰ Time: ${timeStr}
+━━━━━━━━━━━━━━━━━━━━
+💬 Special Request: ${specialNote}`;
+
+  closeOrderModal();
+  showSuccess();
+  setTimeout(()=>{
+    const url=`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+    window.open(url,'_blank');
+  },1800);
+}
+
+// ======================== SUCCESS ========================
+function showSuccess(){
+  document.getElementById('success-screen').classList.add('show');
+  runConfetti();
+}
+function resetSuccess(){
+  document.getElementById('success-screen').classList.remove('show');
+  cart=[];saveCart();renderCart();
+  MENU.forEach(item=>{
+    const card=document.getElementById('card-'+item.id);
+    if(card){const n=buildCard(item);card.parentNode.replaceChild(n,card);n.classList.add('visible');}
+  });
+}
+function runConfetti(){
+  const canvas=document.getElementById('confetti-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const colors=['#c9a84c','#f0d080','#8b6914','#4caf50','#e53935','#fff'];
+  const bits=Array.from({length:120},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,r:Math.random()*6+2,c:colors[Math.floor(Math.random()*colors.length)],s:Math.random()*3+1,rot:Math.random()*360,dr:Math.random()*5-2.5}));
+  let t=0;
+  function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    bits.forEach(b=>{b.y+=b.s;b.rot+=b.dr;if(b.y>canvas.height)b.y=-10;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot*Math.PI/180);ctx.fillStyle=b.c;ctx.fillRect(-b.r/2,-b.r/2,b.r,b.r);ctx.restore();});
+    if(++t<150)requestAnimationFrame(frame);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }frame();
+}
+
+// ======================== SEARCH & FILTER ========================
+function handleSearch(val){
+  searchQuery=val.trim().toLowerCase();
+  document.getElementById('search-clear').classList.toggle('show',searchQuery.length>0);
+  applyFilters();
+}
+function clearSearch(){
+  document.getElementById('search-input').value='';searchQuery='';
+  document.getElementById('search-clear').classList.remove('show');
+  applyFilters();
+}
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+function handleSort(v){sortMode=v;applyFilters();}
+
+function applyFilters(){
+  let filtered=MENU.filter(item=>{
+    if(activeFilter==='veg'&&item.type!=='veg')return false;
+    if(activeFilter==='nonveg'&&item.type!=='nonveg')return false;
+    if(activeFilter==='special'&&!item.badges.includes('Bestseller'))return false;
+    if(activeFilter==='combo'&&item.cat!=='Combos')return false;
+    if(searchQuery&&!item.name.toLowerCase().includes(searchQuery)&&!item.desc.toLowerCase().includes(searchQuery)&&!item.cat.toLowerCase().includes(searchQuery))return false;
+    return true;
+  });
+  if(sortMode==='low')filtered.sort((a,b)=>a.full-b.full);
+  if(sortMode==='high')filtered.sort((a,b)=>b.full-a.full);
+
+  const visibleIds=new Set(filtered.map(i=>i.id));
+  const visibleCats=new Set(filtered.map(i=>i.cat));
+
+  CATEGORIES.forEach(cat=>{
+    const sec=document.getElementById('sec-'+cat.replace(/\s/g,'-'));
+    if(!sec)return;
+    const inCat=MENU.filter(i=>i.cat===cat);
+    const visInCat=inCat.filter(i=>visibleIds.has(i.id));
+    sec.style.display=visInCat.length===0?'none':'';
+    inCat.forEach(item=>{
+      const card=document.getElementById('card-'+item.id);
+      if(card)card.style.display=visibleIds.has(item.id)?'':'none';
+    });
+  });
+
+  // Empty state
+  const area=document.getElementById('menu-area');
+  let es=area.querySelector('.empty-state');
+  if(filtered.length===0){
+    if(!es){
+      es=document.createElement('div');es.className='empty-state';
+      es.innerHTML=`<span class="empty-state-icon">🔍</span><div class="empty-state-text">No dishes found</div><div style="font-size:.78rem;color:var(--text-dim);margin-top:.4rem">Try a different search or filter</div>`;
+      area.appendChild(es);
+    }
+  } else if(es){es.remove();}
+}
+
+// ======================== SCROLL SPY ========================
+function scrollToSection(cat,btn){
+  if(cat==='All'){window.scrollTo({top:0,behavior:'smooth'});
+    document.querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+    document.querySelector('.tab-pill').classList.add('active');return;
+  }
+  const sec=document.getElementById('sec-'+cat.replace(/\s/g,'-'));
+  if(sec){
+    const offset=220;
+    const y=sec.getBoundingClientRect().top+window.scrollY-offset;
+    window.scrollTo({top:y,behavior:'smooth'});
+  }
+  document.querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setupScrollSpy(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const id=e.target.id.replace('sec-','').replace(/-/g,' ');
+        document.querySelectorAll('.tab-pill').forEach(t=>{
+          const label=t.textContent.replace(/[\p{Emoji}\s]+/gu,'').replace(/\s/g,'');
+          const secLabel=id.replace(/\s/g,'');
+          t.classList.toggle('active',label===secLabel||t.textContent.includes(id));
+        });
+      }
+    });
+  },{threshold:.2,rootMargin:'-220px 0px -50% 0px'});
+  document.querySelectorAll('.menu-section').forEach(s=>obs.observe(s));
+}
+
+function setupIntersectionObserver(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){
+        setTimeout(()=>e.target.classList.add('visible'),i*40);
+        obs.unobserve(e.target);
+      }
+    });
+  },{threshold:.05});
+  document.querySelectorAll('.item-card').forEach(c=>obs.observe(c));
+}
+
+// ======================== MISC ========================
+function updateCharCount(el){document.getElementById('char-count').textContent=el.value.length;}
+function showSnackbar(msg){
+  const sb=document.getElementById('snackbar');sb.textContent=msg;sb.classList.add('show');
+  setTimeout(()=>sb.classList.remove('show'),2500);
+}
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('scroll-top').classList.toggle('show',window.scrollY>300);
+});
+
+// ======================== INIT ========================
+function init(){
+  buildTabs();buildMenu();renderCart();
+}
+
+init();
+</script>
+</body>
+</html>
